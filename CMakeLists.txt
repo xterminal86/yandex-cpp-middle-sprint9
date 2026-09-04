@@ -81,3 +81,5 @@ target_include_directories(${PROJECT_NAME}_tests PUBLIC
 # Включаем тестирование
 enable_testing()
 add_test(NAME ${PROJECT_NAME}_tests COMMAND ${PROJECT_NAME}_tests)
+
+add_subdirectory(examples)
