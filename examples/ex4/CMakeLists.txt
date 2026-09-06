@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(ex1 VERSION 1.0.0 LANGUAGES CXX)
+project(ex4 VERSION 1.0.0 LANGUAGES CXX)
 
 cmake_policy(SET CMP0169 OLD)
 
@@ -34,7 +34,7 @@ CPMAddPackage(
 )
 
 # Создаём исполняемый таргет и линкуем к нему статическую библиотеку
-add_executable(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ex1.cpp")
+add_executable(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/ex4.cpp")
 
 # Добавляем в проект используемые сторонние PRIVATE
 target_include_directories(
