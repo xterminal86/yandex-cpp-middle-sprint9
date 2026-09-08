@@ -7,20 +7,29 @@
 
 class SfmlEventHandler
 {
+  using sender_concept = ex::sender_t;
+
   public:
     template <typename Receiver>
     struct OperationState
     {
       Receiver receiver_;
-      sf::RenderWindow &window_;
+      sf::RenderWindow& window_;
       RenderSettings render_settings_;
-      AppState &state_;
+      AppState& state_;
 
       static constexpr float ZOOM_INTERVAL_MS = 100.0f;
 
       template <typename R>
-      explicit OperationState(R &&r, sf::RenderWindow &window, RenderSettings render_settings, AppState &state)
-          : receiver_{std::forward<R>(r)}, window_{window}, render_settings_{render_settings}, state_{state} {}
+      explicit OperationState(
+        R &&r,
+        sf::RenderWindow &window,
+        RenderSettings render_settings,
+        AppState &state
+      ) : receiver_{std::forward<R>(r)},
+          window_{window},
+          render_settings_{render_settings},
+          state_{state} {}
 
       /* Ваш код метода start() здесь */
 
