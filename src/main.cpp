@@ -22,11 +22,9 @@ namespace ex = stdexec;
 class WaitForFPS
 {
   public:
-    static constexpr float TARGET_FPS = 60.0f;
-    static constexpr float FRAME_TIME_MS = 1000.0f / TARGET_FPS;
-
     explicit WaitForFPS(FrameClock &frame_clock, unsigned int target_fps)
-        : frame_clock_(frame_clock), frame_time_(1s / target_fps) {}
+        : frame_clock_(frame_clock),
+          frame_time_(std::chrono::milliseconds(1000 / target_fps)) {}
 
     void operator()()
     {
@@ -76,7 +74,24 @@ class MandelbrotApp
                   }));
       ex::sync_wait(std::move(initialize));
 
-      auto process_frame = ex::just(); // Ваш код здесь
+      auto process_frame = ex::on(
+        sfml_sched,
+        ex::just()
+        | SfmlEventHandler{state_->window,
+                           state_->render_settings,
+                           state_->app_state}
+      )
+      | ex::then([this] { return &state_->fb; })
+      | ex::continues_on(compute_sched)
+      | mandelbrot::MakeComputeSender(state_->render_settings,
+                                      state_->app_state.viewport)
+      | ex::continues_on(sfml_sched)
+      | render::MakeSfmlDisplaySender(*state_)
+      | ex::then([this] { WaitForFPS{state_->frame_clock, 60}(); })
+      | ex::then([this] { return state_->app_state.should_exit; });
+
+      //auto repeated_pipeline = std::move(process_frame) | exec::repeat_until();
+      //ex::sync_wait(std::move(repeated_pipeline));
 
       auto repeated_pipeline = std::move(process_frame) |
                                ex::then(
