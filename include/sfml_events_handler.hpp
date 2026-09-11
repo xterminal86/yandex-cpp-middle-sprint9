@@ -8,9 +8,25 @@
 class SfmlEventHandler
 {
   public:
+    using sender_concept = ex::sender_t;
+
+    using completion_signatures = ex::completion_signatures<
+      ex::set_value_t(),
+      ex::set_error_t(std::exception_ptr),
+      ex::set_stopped_t()
+    >;
+
+    SfmlEventHandler(sf::RenderWindow &window,
+                     RenderSettings render_settings,
+                     AppState &state)
+        : window_{window}, render_settings_{render_settings}, state_{state} {}
+
+  // ---------------------------------------------------------------------------
     template <typename Receiver>
     struct OperationState
     {
+      using operation_state_concept = stdexec::operation_state_tag;
+
       Receiver receiver_;
       sf::RenderWindow& window_;
       RenderSettings render_settings_;
@@ -23,17 +39,14 @@ class SfmlEventHandler
         R &&r,
         sf::RenderWindow &window,
         RenderSettings render_settings,
-        AppState &state
+        AppState& state
       ) : receiver_{std::forward<R>(r)},
           window_{window},
           render_settings_{render_settings},
           state_{state} {}
 
-      template <typename R>
-      void start(R &&r) noexcept
+      void start() noexcept
       {
-        receiver_ = std::forward<R>(r);
-
         HandleEvents();
         HandleAutoZoom();
 
@@ -187,36 +200,24 @@ class SfmlEventHandler
           state_.zoom_clock.restart();
         }
     };
+  // ---------------------------------------------------------------------------
 
-    sf::RenderWindow &window_;
+    sf::RenderWindow& window_;
     RenderSettings render_settings_;
-    AppState &state_;
-
-    SfmlEventHandler(sf::RenderWindow &window,
-                     RenderSettings render_settings,
-                     AppState &state)
-        : window_{window}, render_settings_{render_settings}, state_{state} {}
-
-    using sender_concept = ex::sender_t;
-
-    using completion_signatures =
-    ex::completion_signatures<
-      ex::set_value_t(),
-      ex::set_stopped_t()
-    >;
+    AppState& state_;
 
     template <typename Receiver>
-    auto connect(Receiver &&receiver) const
+    auto connect(Receiver receiver) const
     {
-      return OperationState<std::decay_t<Receiver>>{
-          std::forward<Receiver>(receiver),
-          window_,
-          render_settings_,
-          state_
+      return OperationState<Receiver>{
+        std::move(receiver),
+        window_,
+        render_settings_,
+        state_
       };
     }
 
-    auto get_completion_signatures() const noexcept
+    static auto get_completion_signatures() noexcept
     {
       return completion_signatures{};
     }

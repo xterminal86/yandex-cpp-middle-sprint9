@@ -58,33 +58,48 @@ class MandelbrotApp
       auto compute_sched = compute_pool_.get_scheduler();
       auto sfml_sched = sfml_thread_.get_scheduler();
 
-      auto initialize =
-          ex::on(sfml_sched,
-                  ex::just() | ex::then([this]()
-                  {
-                    state_ = std::make_unique<SfmlState>(  //
-                      RenderSettings
-                      {
-                        .width = 800,
-                        .height = 600,
-                        .max_iterations = 50,
-                        .escape_radius = 2.0
-                      }
-                    );
-                  }));
+      auto initialize = ex::on(
+        sfml_sched,
+        ex::just()
+        | ex::then([this]()
+          {
+            state_ = std::make_unique<SfmlState>(  //
+              RenderSettings
+              {
+                .width = 800,
+                .height = 600,
+                .max_iterations = 50,
+                .escape_radius = 2.0
+              }
+            );
+          }
+        )
+      );
       ex::sync_wait(std::move(initialize));
 
       auto process_frame = ex::on(
         sfml_sched,
         ex::just()
-        | SfmlEventHandler{state_->window,
-                           state_->render_settings,
-                           state_->app_state}
+      )
+      | ex::then(
+        [this]
+        {
+          return SfmlEventHandler
+          {
+            state_->window,
+            state_->render_settings,
+            state_->app_state
+          };
+        }
       )
       | ex::then([this] { return &state_->fb; })
+      // На поток подсчёта.
       | ex::continues_on(compute_sched)
       | mandelbrot::MakeComputeSender(state_->render_settings,
                                       state_->app_state.viewport)
+      // Обратно на поток где инициализировалась SFML, т.к. только поток,
+      // который инициализировал графическую систему, может ей управлять
+      // (стандартная фигня, в SDL то же самое).
       | ex::continues_on(sfml_sched)
       | render::MakeSfmlDisplaySender(*state_)
       | ex::then([this] { WaitForFPS{state_->frame_clock, 60}(); })
