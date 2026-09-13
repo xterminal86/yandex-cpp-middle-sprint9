@@ -77,6 +77,7 @@ class MandelbrotApp
       );
       ex::sync_wait(std::move(initialize));
 
+      /*
       auto process_frame = ex::on(
         sfml_sched,
         ex::just()
@@ -104,18 +105,42 @@ class MandelbrotApp
       | render::MakeSfmlDisplaySender(*state_)
       | ex::then([this] { WaitForFPS{state_->frame_clock, 60}(); })
       | ex::then([this] { return state_->app_state.should_exit; });
+      */
 
-      //auto repeated_pipeline = std::move(process_frame) | exec::repeat_until();
-      //ex::sync_wait(std::move(repeated_pipeline));
+      /*
+      auto process_frame = SfmlEventHandler
+      {
+        state_->window,
+        state_->render_settings,
+        state_->app_state
+      }
+      | ex::continues_on(compute_sched)
+      | ex::then(
+        [this]()
+        {
+          return mandelbrot::MakeComputeSender(state_->render_settings,
+                                               state_->app_state.viewport);
+        }
+      );
+      */
 
-      auto repeated_pipeline = std::move(process_frame) |
-                               ex::then(
+      auto process_frame = SfmlEventHandler
+      {
+        state_->window,
+        state_->render_settings,
+        state_->app_state
+      };
+
+      //auto process_frame = ex::just();
+
+      auto repeated_pipeline = std::move(process_frame)
+                               | ex::then(
                                  [this]
                                  {
                                    return state_->app_state.should_exit;
                                  }
-                               ) |
-                               exec::repeat_until();
+                               )
+                               | exec::repeat_until();
       ex::sync_wait(std::move(repeated_pipeline));
     }
 

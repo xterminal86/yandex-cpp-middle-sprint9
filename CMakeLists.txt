@@ -24,8 +24,8 @@ find_package(SFML COMPONENTS graphics window system REQUIRED)
 # https://cmake.org/cmake/help/latest/module/FetchContent.html
 include(FetchContent)
 
-# С его помощью объявляем, что мы будем тянуть CPM (пакетный менеджер для cmake) 
-# из гитхаба. По факту это один файл CPM.cmake, в котором определена куча 
+# С его помощью объявляем, что мы будем тянуть CPM (пакетный менеджер для cmake)
+# из гитхаба. По факту это один файл CPM.cmake, в котором определена куча
 # хелпер-функций.
 FetchContent_Declare(
   CPM
@@ -40,9 +40,9 @@ FetchContent_MakeAvailable(CPM)
 CPMAddPackage(
     NAME stdexec
     GITHUB_REPOSITORY NVIDIA/stdexec
-    # This will always pull the latest code from the `main` branch. You may also 
+    # This will always pull the latest code from the `main` branch. You may also
     # use a specific release version or tag
-    GIT_TAG main 
+    GIT_TAG main
     OPTIONS
         "STDEXEC_BUILD_EXAMPLES OFF"
         "STDEXEC_BUILD_TESTS OFF"

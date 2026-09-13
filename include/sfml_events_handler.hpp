@@ -11,14 +11,14 @@ class SfmlEventHandler
     using sender_concept = ex::sender_t;
 
     using completion_signatures = ex::completion_signatures<
-      ex::set_value_t(),
-      ex::set_error_t(std::exception_ptr),
-      ex::set_stopped_t()
+        ex::set_value_t()
+      , ex::set_stopped_t()
+      //, ex::set_error_t(std::exception_ptr)
     >;
 
-    SfmlEventHandler(sf::RenderWindow &window,
+    SfmlEventHandler(sf::RenderWindow& window,
                      RenderSettings render_settings,
-                     AppState &state)
+                     AppState& state)
         : window_{window}, render_settings_{render_settings}, state_{state} {}
 
   // ---------------------------------------------------------------------------
@@ -36,8 +36,8 @@ class SfmlEventHandler
 
       template <typename R>
       explicit OperationState(
-        R &&r,
-        sf::RenderWindow &window,
+        R&& r,
+        sf::RenderWindow& window,
         RenderSettings render_settings,
         AppState& state
       ) : receiver_{std::forward<R>(r)},
@@ -215,10 +215,5 @@ class SfmlEventHandler
         render_settings_,
         state_
       };
-    }
-
-    static auto get_completion_signatures() noexcept
-    {
-      return completion_signatures{};
     }
 };
