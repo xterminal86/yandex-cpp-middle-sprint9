@@ -10,13 +10,20 @@ namespace ex = stdexec;
 
 namespace mandelbrot {
 
-static auto MakeComputeSender(RenderSettings settings, ViewPort viewport)
+static auto MakeComputeSender(bool need_rerender,
+                              RenderSettings settings,
+                              ViewPort viewport)
 {
   static AvrTimeCounter time_counter;
 
   return ex::then(
-    [settings, viewport](FrameBuffer *fb)
+    [need_rerender, settings, viewport](FrameBuffer* fb)
     {
+      if (not need_rerender)
+      {
+        return fb;
+      }
+
       time_counter.Start();
 
       const std::uint32_t width  = fb->width;

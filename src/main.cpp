@@ -101,6 +101,7 @@ class MandelbrotApp
                // Switch worker to computation.
                | ex::continues_on(compute_sched)
                | mandelbrot::MakeComputeSender(
+                   state_->app_state.need_rerender,
                    state_->render_settings,
                    state_->app_state.viewport
                  );

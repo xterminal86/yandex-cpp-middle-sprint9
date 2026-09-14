@@ -54,6 +54,7 @@ struct AppState
   bool left_mouse_pressed{false};
   bool right_mouse_pressed{false};
   bool auto_zoom_enabled{false};
+  bool first_start{true};
 
   // Seahorse Valley point for auto-zoom
   static constexpr double AUTO_ZOOM_TARGET_X = -0.7436438870371587;

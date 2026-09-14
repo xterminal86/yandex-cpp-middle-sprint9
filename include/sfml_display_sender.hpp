@@ -6,11 +6,16 @@
 
 namespace render {
 
-static auto MakeSfmlDisplaySender(SfmlState &st)
+static auto MakeSfmlDisplaySender(SfmlState& st)
 {
   static AvrTimeCounter time_counter;
   return ex::then([&](FrameBuffer *fb)
   {
+    if (not st.app_state.need_rerender)
+    {
+      return;
+    }
+
     time_counter.Start();
     st.texture.update(fb->rgba.data());
 

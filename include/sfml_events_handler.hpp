@@ -13,7 +13,6 @@ class SfmlEventHandler
     using completion_signatures = ex::completion_signatures<
         ex::set_value_t()
       , ex::set_stopped_t()
-      //, ex::set_error_t(std::exception_ptr)
     >;
 
     SfmlEventHandler(sf::RenderWindow& window,
@@ -62,9 +61,12 @@ class SfmlEventHandler
       private:
         void HandleEvents()
         {
+          bool wasEvent = false;
           sf::Event event;
           while (window_.pollEvent(event))
           {
+            wasEvent = true;
+
             switch (event.type)
             {
               case sf::Event::Closed:
@@ -87,6 +89,19 @@ class SfmlEventHandler
                 break;
             }
           }
+
+          if (state_.first_start)
+          {
+            state_.first_start = false;
+            state_.need_rerender = true;
+          }
+          else
+          {
+            if (not state_.auto_zoom_enabled and not wasEvent)
+            {
+              state_.need_rerender = false;
+            }
+          }
         }
 
         void HandleKeyPress(const sf::Event::KeyEvent& key)
@@ -99,6 +114,7 @@ class SfmlEventHandler
 
             case sf::Keyboard::X:
               state_.auto_zoom_enabled = !state_.auto_zoom_enabled;
+              state_.need_rerender = true;
               if (state_.auto_zoom_enabled)
               {
                 state_.zoom_clock.restart();
@@ -112,33 +128,50 @@ class SfmlEventHandler
               break;
 
             default:
+              state_.need_rerender = false;
               break;
           }
         }
 
         void HandleMousePress(const sf::Event::MouseButtonEvent &mouse)
         {
-          if (mouse.button == sf::Mouse::Left)
+          switch (mouse.button)
           {
-            state_.left_mouse_pressed = true;
-            ZoomToPoint(mouse.x, mouse.y, /*zoom_in=*/true);
-          }
-          else if (mouse.button == sf::Mouse::Right)
-          {
-            state_.right_mouse_pressed = true;
-            ZoomToPoint(mouse.x, mouse.y, /*zoom_in=*/false);
+            case sf::Mouse::Left:
+            {
+              state_.left_mouse_pressed = true;
+              ZoomToPoint(mouse.x, mouse.y, /*zoom_in=*/true);
+            }
+            break;
+
+            case sf::Mouse::Right:
+            {
+              state_.right_mouse_pressed = true;
+              ZoomToPoint(mouse.x, mouse.y, /*zoom_in=*/false);
+            }
+            break;
+
+            default:
+              state_.need_rerender = false;
+              break;
           }
         }
 
         void HandleMouseRelease(const sf::Event::MouseButtonEvent &mouse)
         {
-          if (mouse.button == sf::Mouse::Left)
+          switch (mouse.button)
           {
-            state_.left_mouse_pressed = false;
-          }
-          else if (mouse.button == sf::Mouse::Right)
-          {
-            state_.right_mouse_pressed = false;
+            case sf::Mouse::Left:
+              state_.left_mouse_pressed = false;
+              break;
+
+            case sf::Mouse::Right:
+              state_.right_mouse_pressed = false;
+              break;
+
+            default:
+              state_.need_rerender = false;
+              break;
           }
         }
 

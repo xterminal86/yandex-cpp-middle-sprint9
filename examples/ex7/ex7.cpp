@@ -60,6 +60,7 @@ int main()
   exec::static_thread_pool pool{2};
   auto sched = pool.get_scheduler();
 
+  /*
   auto pipeline = ex::on(
     sched,
     ex::just()
@@ -72,10 +73,11 @@ int main()
   )
   | exec::repeat_until();
   ex::sync_wait(std::move(pipeline));
+  */
 
   // This works.
-  //auto pipeline = MySender{} | exec::repeat_until();
-  //ex::sync_wait(std::move(pipeline));
+  auto pipeline = MySender{} | exec::repeat_until();
+  ex::sync_wait(std::move(pipeline));
 
   return 0;
 }
