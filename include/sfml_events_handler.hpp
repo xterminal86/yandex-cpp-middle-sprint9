@@ -75,6 +75,14 @@ class SfmlEventHandler
                 HandleKeyPress(event.key);
                 break;
 
+              case sf::Event::MouseButtonPressed:
+                HandleMousePress(event.mouseButton);
+                break;
+
+              case sf::Event::MouseButtonReleased:
+                HandleMouseRelease(event.mouseButton);
+                break;
+
               default:
                 break;
             }

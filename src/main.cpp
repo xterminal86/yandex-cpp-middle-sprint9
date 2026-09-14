@@ -77,8 +77,9 @@ class MandelbrotApp
       );
       ex::sync_wait(std::move(initialize));
 
-      auto process_frame =
-        ex::schedule(sfml_sched)
+      // Explicitly begin every iteration on the SFML worker.
+      auto process_frame = ex::schedule(sfml_sched)
+      // The result must be a sender. That sender is connected and started.
       | ex::let_value(
         [this]
         {
@@ -90,10 +91,14 @@ class MandelbrotApp
           };
         }
       )
+      // This runs after event handling, on the SFML worker.
+      // MakeComputeSender copies the current settings and viewport here,
+      // once per frame.
       | ex::let_value(
         [this, compute_sched]
         {
           return ex::just(&state_->fb)
+               // Switch worker to computation.
                | ex::continues_on(compute_sched)
                | mandelbrot::MakeComputeSender(
                    state_->render_settings,
@@ -102,6 +107,7 @@ class MandelbrotApp
 
         }
       )
+      // Switch worker to rendering.
       | ex::continues_on(sfml_sched)
       | render::MakeSfmlDisplaySender(*state_)
       | ex::then([this] { WaitForFPS{state_->frame_clock, 60}(); })
@@ -110,6 +116,12 @@ class MandelbrotApp
       auto repeated_pipeline = std::move(process_frame)
                                | exec::repeat_until();
       ex::sync_wait(std::move(repeated_pipeline));
+
+      // Destroy graphics related shit on graphics "thread", where it was
+      // originally created.
+      auto cleanup = ex::schedule(sfml_sched)
+                   | ex::then([this] { state_.reset(); });
+      ex::sync_wait(std::move(cleanup));
     }
 
   private:
