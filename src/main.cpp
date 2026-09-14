@@ -77,12 +77,9 @@ class MandelbrotApp
       );
       ex::sync_wait(std::move(initialize));
 
-      /*
-      auto process_frame = ex::on(
-        sfml_sched,
-        ex::just()
-      )
-      | ex::then(
+      auto process_frame =
+        ex::schedule(sfml_sched)
+      | ex::let_value(
         [this]
         {
           return SfmlEventHandler
@@ -93,53 +90,24 @@ class MandelbrotApp
           };
         }
       )
-      | ex::then([this] { return &state_->fb; })
-      // На поток подсчёта.
-      | ex::continues_on(compute_sched)
-      | mandelbrot::MakeComputeSender(state_->render_settings,
-                                      state_->app_state.viewport)
-      // Обратно на поток где инициализировалась SFML, т.к. только поток,
-      // который инициализировал графическую систему, может ей управлять
-      // (стандартная фигня, в SDL то же самое).
+      | ex::let_value(
+        [this, compute_sched]
+        {
+          return ex::just(&state_->fb)
+               | ex::continues_on(compute_sched)
+               | mandelbrot::MakeComputeSender(
+                   state_->render_settings,
+                   state_->app_state.viewport
+                 );
+
+        }
+      )
       | ex::continues_on(sfml_sched)
       | render::MakeSfmlDisplaySender(*state_)
       | ex::then([this] { WaitForFPS{state_->frame_clock, 60}(); })
       | ex::then([this] { return state_->app_state.should_exit; });
-      */
-
-      /*
-      auto process_frame = SfmlEventHandler
-      {
-        state_->window,
-        state_->render_settings,
-        state_->app_state
-      }
-      | ex::continues_on(compute_sched)
-      | ex::then(
-        [this]()
-        {
-          return mandelbrot::MakeComputeSender(state_->render_settings,
-                                               state_->app_state.viewport);
-        }
-      );
-      */
-
-      auto process_frame = SfmlEventHandler
-      {
-        state_->window,
-        state_->render_settings,
-        state_->app_state
-      };
-
-      //auto process_frame = ex::just();
 
       auto repeated_pipeline = std::move(process_frame)
-                               | ex::then(
-                                 [this]
-                                 {
-                                   return state_->app_state.should_exit;
-                                 }
-                               )
                                | exec::repeat_until();
       ex::sync_wait(std::move(repeated_pipeline));
     }
