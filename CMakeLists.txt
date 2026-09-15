@@ -8,6 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+add_compile_options(-Wfatal-errors)
+add_compile_options(-Werror=return-type)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     # Не больше одной ошибки за раз
     add_compile_options(-fmax-errors=1)
@@ -17,18 +20,29 @@ endif()
 find_package(GTest REQUIRED)
 find_package(SFML COMPONENTS graphics window system REQUIRED)
 
+# Подключаем встроенный в cmake модуль FetchContent
+# https://cmake.org/cmake/help/latest/module/FetchContent.html
 include(FetchContent)
+
+# С его помощью объявляем, что мы будем тянуть CPM (пакетный менеджер для cmake)
+# из гитхаба. По факту это один файл CPM.cmake, в котором определена куча
+# хелпер-функций.
 FetchContent_Declare(
   CPM
   GIT_REPOSITORY https://github.com/cpm-cmake/CPM.cmake
   GIT_TAG origin/master
 )
+
+# Качает, конфигурит и подключает в проект собственно CPM.
 FetchContent_MakeAvailable(CPM)
 
+# Теперь с помощью CPM тянем NVIDIA/stdexec
 CPMAddPackage(
     NAME stdexec
     GITHUB_REPOSITORY NVIDIA/stdexec
-    GIT_TAG main # This will always pull the latest code from the `main` branch. You may also use a specific release version or tag
+    # This will always pull the latest code from the `main` branch. You may also
+    # use a specific release version or tag
+    GIT_TAG main
     OPTIONS
         "STDEXEC_BUILD_EXAMPLES OFF"
         "STDEXEC_BUILD_TESTS OFF"
@@ -70,7 +84,7 @@ target_link_libraries(${PROJECT_NAME}_tests PRIVATE
     STDEXEC::stdexec
     sfml-graphics sfml-window sfml-system)
 
-target_include_directories(${PROJECT_NAME}_tests PUBLIC 
+target_include_directories(${PROJECT_NAME}_tests PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${stdexec_SOURCE_DIR}/include
     ${matplotplusplus_SOURCE_DIR}/source)
@@ -78,3 +92,5 @@ target_include_directories(${PROJECT_NAME}_tests PUBLIC
 # Включаем тестирование
 enable_testing()
 add_test(NAME ${PROJECT_NAME}_tests COMMAND ${PROJECT_NAME}_tests)
+
+add_subdirectory(examples)
